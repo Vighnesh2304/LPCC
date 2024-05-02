@@ -70,3 +70,8 @@ int main(void) {
     yyparse();
     return 0;
 }
+
+// The user inputs expressions with variables, numbers, arithmetic operations, and functions.
+The parser recognizes the input according to the defined grammar rules.
+Semantic actions are triggered during parsing to evaluate expressions and perform assignments.
+Errors are reported via yyerror() function.
