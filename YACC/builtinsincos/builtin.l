@@ -25,3 +25,5 @@
 .                       { return yytext[0]; } // Handle other characters
 
 %%
+
+// yylex -> read character -> math input against pattern -> if match found perform associated patterns -> return the tokens to parser (yacc)
