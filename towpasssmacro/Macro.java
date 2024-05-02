@@ -1,105 +1,114 @@
 package towpasssmacro;
 
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Macro {
-    static int mdtPointer = 0;
+    // Symbol table to store macro definitions
+    private static Map<String, List<String>> macroTable = new HashMap<>();
 
-    static FileReader fr;
-    static FileWriter wf;
+    // Function to expand macros in the given code
+    private static List<String> expandMacros(String code) {
+        List<String> expandedCode = new ArrayList<>();
+        String[] lines = code.split("\n");
 
-    static HashMap<String, Integer> MNT = new HashMap<>();
-    static HashMap<Integer, String> MDT = new HashMap<>();
-    static HashMap<String, String> ALA = new HashMap<>();
-    static StringBuilder ic = new StringBuilder();
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+
+            if (line.isEmpty()) {
+                continue;
+            }
+
+            String[] tokens = line.split("\\s+");
+            String token = tokens[0];
+
+            if (token.equals("MACRO")) {
+                // Extract macro name and parameters
+                String macroName = tokens[1];
+                List<String> macroDefinition = new ArrayList<>();
+                i++;
+                while (!lines[i].trim().equals("MEND")) {
+                    macroDefinition.add(lines[i].trim());
+                    i++;
+                }
+                macroTable.put(macroName, macroDefinition);
+            } else if (macroTable.containsKey(token)) {
+                // Macro call detected, expand the macro
+                List<String> macroDefinition = macroTable.get(token);
+                expandedCode.addAll(macroDefinition);
+            } else {
+                // Normal instruction, add to expanded code
+                expandedCode.add(line);
+            }
+        }
+
+        return expandedCode;
+    }
+
+    // Function to generate Intermediate code from expanded macro code
+    private static List<String> generateIntermediateCode(List<String> expandedCode) {
+        List<String> intermediateCode = new ArrayList<>();
+        int lineNum = 1;
+
+        for (String line : expandedCode) {
+            line = line.trim();
+
+            if (line.isEmpty()) {
+                continue;
+            }
+
+            String[] tokens = line.split("\\s+");
+            String token = tokens[0];
+
+            if (token.equals("LOAD") || token.equals("STORE") || token.equals("ADD") || token.equals("SUB")
+                    || token.equals("MULT") || token.equals("END")) {
+                // Process instructions directly into intermediate code
+                intermediateCode.add(lineNum + ": " + line);
+                lineNum++;
+            }
+        }
+
+        return intermediateCode;
+    }
 
     public static void main(String[] args) {
+        // Example Macro-Expanded Code
+        String code = "LOAD A\n" +
+                "MACRO ABC\n" +
+                "LOAD p\n" +
+                "SUB q\n" +
+                "MEND\n" +
+                "STORE B\n" +
+                "MULT D\n" +
+                "MACRO ADD1 ARG\n" +
+                "LOAD X\n" +
+                "STORE ARG\n" +
+                "MEND\n" +
+                "LOAD B\n" +
+                "MACRO ADD5 A1, A2, A3\n" +
+                "STORE A2\n" +
+                "ADD1 5\n" +
+                "ADD1 10\n" +
+                "LOAD A1\n" +
+                "LOAD A3\n" +
+                "MEND\n" +
+                "ADD1 t\n" +
+                "ABC\n" +
+                "ADD5 D1, D2, D3\n" +
+                "END";
 
-        boolean mstart = false;
-        String prev = "";
+        // Expand macros in the code
+        List<String> expandedCode = expandMacros(code);
 
-        try {
-            fr = new FileReader("D:/NOTES/sem 6/LPCC/Practical Exam/Macro MDT MNT/code.txt");
-            BufferedReader bf = new BufferedReader(fr);
-            String s1 = "";
+        // Generate Intermediate code from expanded code
+        List<String> intermediateCode = generateIntermediateCode(expandedCode);
 
-            while ((s1 = bf.readLine()) != null) {
-                String[] indv = s1.split("\\s+");
-                if (indv[0].equals("MACRO")) {
-//					System.out.println(s1);
-                    prev = indv[0];
-                    mstart = true;
-                    continue;
-                }
-                if (prev.equals("MACRO")) {
-                    MNT.put(indv[0], mdtPointer + 1);
-
-                    for (int i = 1; i < indv.length; i++) {
-                        ALA.put(indv[i], "#" + Integer.toString(i));
-                    }
-                    prev = s1;
-                }
-                if (mstart) {
-                    if (!MNT.containsKey(indv[0])) {
-                        String str = indv[0];
-                        for (int i = 1; i < indv.length; i++) {
-                            if (indv[i].charAt(0) == '&') {
-                                str += (" " + ALA.get(indv[i]));
-                            } else {
-                                str += " " + indv[i];
-                            }
-                        }
-                        MDT.put(mdtPointer + 1, str);
-                        mdtPointer++;
-                    }
-                }
-                if(!mstart) {
-                    ic.append("\n" + s1);
-                }
-                if (s1.equals("MEND")) {
-                    mstart = false;
-                }
-                prev = s1;
-            }
-            int maxMacroNameLength = 0;
-            for (String macroName : MNT.keySet()) {
-                maxMacroNameLength = Math.max(maxMacroNameLength, macroName.length());
-            }
-            System.out.println("!!-- MDT Table --!!");
-            System.out.println("Address \t Defination");
-
-            for (Map.Entry<Integer, String> entry : MDT.entrySet()) {
-                System.out.println(entry.getKey() + "\t\t\t" + entry.getValue());
-            }
-
-            System.out.println("\n!!-- MNT Table --!!");
-            System.out.println("MACRO Address");
-
-            for (Map.Entry<String, Integer> entry : MNT.entrySet()) {
-                String macroName = entry.getKey();
-                int address = entry.getValue();
-                String spaces = " ".repeat(maxMacroNameLength - macroName.length() + 1);
-                System.out.println(macroName + spaces + address);
-            }
-
-            System.out.println("\n!!-- ALA Table --!!");
-            System.out.println("Formal \t Positional");
-
-            for (Map.Entry<String, String> entry : ALA.entrySet()) {
-                System.out.println(entry.getKey() + "\t" + entry.getValue());
-            }
-
-            System.out.println("\n!!-- Intermediate Code --!!");
-            System.out.println(ic);
-        } catch (IOException e) {
-            e.printStackTrace();
+        // Print Intermediate code
+        System.out.println("Intermediate Code:");
+        for (String line : intermediateCode) {
+            System.out.println(line);
         }
     }
 }
