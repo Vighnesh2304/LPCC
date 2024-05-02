@@ -14,6 +14,7 @@ public class MacroJ {
         List<String> expandedCode = new ArrayList<>();
 
         for (String line : code) {
+            // Splitting the line into tokens
             String[] tokens = line.split("\\s+", 2);
             String token = tokens[0];
 
@@ -36,6 +37,7 @@ public class MacroJ {
         int lineNum = 1;
 
         for (String line : code) {
+            // Adding line numbers to the intermediate code
             intermediateCode.add(lineNum + ": " + line);
             lineNum++;
         }
