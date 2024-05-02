@@ -14,32 +14,37 @@ public class Macro {
         List<String> expandedCode = new ArrayList<>();
         String[] lines = code.split("\n");
 
+        // Iterate through each line of the code
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i].trim();
 
+            // Skip empty lines
             if (line.isEmpty()) {
                 continue;
             }
 
+            // Split the line into tokens
             String[] tokens = line.split("\\s+");
             String token = tokens[0];
 
+            // Check if the line contains a macro definition
             if (token.equals("MACRO")) {
                 // Extract macro name and parameters
                 String macroName = tokens[1];
                 List<String> macroDefinition = new ArrayList<>();
                 i++;
+                // Collect lines until MEND is encountered and store in macroTable
                 while (!lines[i].trim().equals("MEND")) {
                     macroDefinition.add(lines[i].trim());
                     i++;
                 }
                 macroTable.put(macroName, macroDefinition);
             } else if (macroTable.containsKey(token)) {
-                // Macro call detected, expand the macro
+                // If a macro call is detected, expand the macro
                 List<String> macroDefinition = macroTable.get(token);
                 expandedCode.addAll(macroDefinition);
             } else {
-                // Normal instruction, add to expanded code
+                // If it's a normal instruction, add it to the expanded code
                 expandedCode.add(line);
             }
         }
@@ -52,16 +57,20 @@ public class Macro {
         List<String> intermediateCode = new ArrayList<>();
         int lineNum = 1;
 
+        // Iterate through each line of the expanded code
         for (String line : expandedCode) {
             line = line.trim();
 
+            // Skip empty lines
             if (line.isEmpty()) {
                 continue;
             }
 
+            // Split the line into tokens
             String[] tokens = line.split("\\s+");
             String token = tokens[0];
 
+            // Check if the line contains an instruction
             if (token.equals("LOAD") || token.equals("STORE") || token.equals("ADD") || token.equals("SUB")
                     || token.equals("MULT") || token.equals("END")) {
                 // Process instructions directly into intermediate code
@@ -73,6 +82,7 @@ public class Macro {
         return intermediateCode;
     }
 
+    // Main method
     public static void main(String[] args) {
         // Example Macro-Expanded Code
         String code = "LOAD A\n" +
